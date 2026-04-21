@@ -1,0 +1,13 @@
+# Врменные файлы Python
+__pycash__/
+*.pyc
+*.pyo
+
+# Файлы настроек ОС
+.DS_Store
+Thumbs.db
+
+# Личные данные и ключи
+.env
+*.key
+*.log
