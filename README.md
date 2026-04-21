@@ -9,7 +9,7 @@
    git clone https://github.com/ТВОЙ_НИК/CodeKingdom.git
    cd CodeKingdom
 3. Запусти игру:
-    python main.py
+    `python main.py`
 ## 🎮 Управление
     1 → Пойти в лес (бой, лут)
     2 → Зайти в деревню (лекарство)
