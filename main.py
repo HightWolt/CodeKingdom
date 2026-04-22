@@ -1,3 +1,6 @@
+import json
+import os
+
 # Визуал
 RESET = "\033[0m"
 BOLD = "\033[1m"
@@ -5,6 +8,8 @@ GREEN = "\033[32m"
 YELLOW = "\033[33m"
 CYAN = "\033[36m"
 RED = "\033[31m"
+
+SAVE_FILE = "save.json"
 
 def print_header():
     print(f"{BOLD}{CYAN}")
@@ -72,14 +77,50 @@ def proccess_choice(choice, hp, attack, inventory):
 
     return hp, attack, inventory, True
 
+def save_game(player_name, hp, attack, inventory):
+    """Сохраняет прогресс в файл JSON"""
+    data = {
+        "player_name": player_name,
+        "hp": hp,
+        "attack": attack,
+        "inventory": inventory
+    }
+    with open(SAVE_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=4, ensure_ascii=False)
+    print(f"💾 Прогресс сохранён  в {SAVE_FILE}")
+
+def load_game():
+    """Загружает прогресс из файла, если он существует"""
+    if not os.path.exists(SAVE_FILE):
+        return None
+    try:
+        with open(SAVE_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except (json.JSONDecodeError, IOError):
+        return None
+
 def main():
     print_header()
-    player_name = input(f"{GREEN}Как тебя зовут, герой?{RESET}").strip()
+    saved_data = load_game()
+
+    if saved_data:
+        print(f"{GREEN}📜 Найдено сохранение: {saved_data['player_name']}(❤ {saved_data['hp']}){RESET}")
+        start_choice = input(f"Загрузить прошлую историю? (1 - Да, 2 - Начать заново): {RESET}").strip()
+
+        if start_choice == "1":
+            player_name  = saved_data["player_name"]
+            hp = saved_data["hp"]
+            attack = saved_data["attack"]
+            inventory = saved_data["inventory"]
+            print(f"\n{CYAN}✨ Добро пожаловать обратно, {player_name}!{RESET}")
+        else:
+            player_name = input(f"{GREEN}Как тебя зовут, герой?{RESET}").strip()
+            hp, attack, inventory = 100, 5, ["🗺 Карта мира", "🍞 Хлеб"]
+    else:
+        player_name = input(f"{GREEN}Как тебя зовут, герой?{RESET}").strip()
+        hp, attack, inventory = 100, 5, ["🗺 Карта мира", "🍞 Хлеб"]
+
     print(f"\n{YELLOW}Привет, {player_name}! Твоя история начинается.{RESET}")
-
-    # Состояние героя
-    hp, attack, inventory = 100, 5, ["🗺 Карта мира", "🍞 Хлеб"]
-
     playing = True
 
     while playing:
@@ -88,7 +129,7 @@ def main():
         choice = get_choice()
         hp, attack, inventory, playing = proccess_choice(choice, hp, attack, inventory)
     
-    print("🌟 Спасибо за игру! Код спасён.")
+    save_game(player_name, hp, attack, inventory)
 
 if __name__ == "__main__":
     main()
