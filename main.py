@@ -9,127 +9,122 @@ YELLOW = "\033[33m"
 CYAN = "\033[36m"
 RED = "\033[31m"
 
-SAVE_FILE = "save.json"
+class Hero:
+    """Чертёж героя. Описывает, кто он и что умеет"""
+    def __init__(self, name="Герой", hp=100, attack=5, inventory=None):
+        self.name = name
+        self.hp = hp
+        self.attack = attack
+        self.inventory = inventory or ["🗺 Карта мира", "🍞 Хлеб"]
+    
+    def show_stats(self):
+        print(f"\n{BOLD}📊 Твои характеристики:{RESET}")
+        print(f" ❤ Здоровье: {self.hp} | ⚔ Атака: {self.attack}")
+        print(f" 🎒 Инвентарь: {', '.join(self.inventory)}")
+    
+    def take_damage(self, amount):
+        self.hp = max(0, self.hp - amount)
+    
+    def heal(self, amount):
+        self.hp = min(100, self.hp + amount)
+    
+    def add_item(self, item):
+        if item not in self.inventory:
+            self.inventory.append(item)
+            print(f" 🎒 В рюкзак упал: {item}!")
 
-def print_header():
-    print(f"{BOLD}{CYAN}")
-    print("  ╔══════════════════════════════╗")
-    print("  ║      🌲 CODEKINGDOM 🌲       ║")
-    print("  ╚══════════════════════════════╝")
-    print(f"{RESET}")
+class GameEngine:
+    """Движок игры. Управление циклом, вводом, сохранением и миром"""
+    def __init__(self):
+        self.hero = Hero()
+        self.save_file = "save.json"
+        self.is_running = True
 
-def show_stats(hp, attack, inventory):
-    # Текущие характеристики
-    print(f"\n{BOLD}📊 Твои характеристики:{RESET}")
-    print(f" ❤ Здоровье: {hp} | ⚔ Атака: {attack}")
-    print(f" 🎒 Инвентарь: {', '.join(inventory)}")
+    def start(self):
+        print(f"{BOLD}{CYAN}")
+        print("  ╔══════════════════════════════╗")
+        print("  ║      🌲 CODEKINGDOM 🌲       ║")
+        print("  ╚══════════════════════════════╝")
+        print(f"{RESET}")
 
-def show_menu():
-    print(f"\n{BOLD}📍 ПЕРЕД ТОБОЙ РАЗВИЛКА:{RESET}")
-    print(f" {GREEN}1.{RESET} Пойти в тёмный лес 🌲")
-    print(f" {CYAN}2.{RESET} Зайти в деревню 🏘")
-    print(f" {YELLOW}3.{RESET} Отдохнуть у костра")
-    print(f" {RED}4.{RESET} Выйти из игры 🚪 ")
+        self._load_or_create_hero()
 
-def get_choice():
-    # Валидация выбора
-    valid_choices = {"1", "2", "3", "4"}
-    while True:
-        choice = input(f"\n{BOLD}Твоё решение? (1/2/3/4): {RESET}").strip()
-        if choice == "":
-            print(f"{RED}⚠ Пустота не ведёт никуда. Введи цифру!{RESET}")
-        elif choice not in  valid_choices:
+        print(f"\n{YELLOW}Твоя история начинается, {self.hero.name}!{RESET}")
+
+        while self.is_running:
+            self.hero.show_stats()
+            self._show_menu()
+            choice = self._get_choice()
+            self._proccess_choice(choice)
+    
+    def _load_or_create_hero(self):
+        """Загружает прогресс из файла, если он существует"""
+        if os.path.exists(self.save_file):
+            try:
+                with open(self.save_file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    print(f"{GREEN}📜 Найдено сохранение: {data['name']}(❤ {data['hp']}){RESET}")
+                    if input(f"{YELLOW}1. Новая игра | 2. Продолжить (1/2): {RESET}").strip() == "2":
+                        self.hero = Hero(data["name"], data["hp"], data["attack"], data["inventory"])
+                        return
+            except Exception:
+                pass
+        self.hero = Hero(input(f"\n{GREEN}Как тебя зовут, герой? {RESET}").strip())
+
+    def _show_menu(self):
+        print(f"\n{BOLD}📍 ПЕРЕД ТОБОЙ РАЗВИЛКА:{RESET}")
+        print(f" {GREEN}1.{RESET} Пойти в тёмный лес 🌲")
+        print(f" {CYAN}2.{RESET} Зайти в деревню 🏘")
+        print(f" {YELLOW}3.{RESET} Отдохнуть у костра 💤")
+        print(f" {RED}4.{RESET} Выйти из игры 🚪 ")
+
+    def _get_choice(self):
+        while True:
+            choice = input(f"\n{BOLD}Твоё решение? (1/2/3/4): {RESET}").strip()
+            if choice in {"1", "2", "3", "4"}:
+                return choice
             print(f"{RED} ⚠ Неверная руна! Магия понимает только 1, 2, 3 или 4{RESET}")
-        else:
-            return choice
 
-def proccess_choice(choice, hp, attack, inventory):
-    if choice == "1":
-        print(f"\n{GREEN}🍂 В лесу на тебя выскакивает волк! Ты отбиваешься.{RESET}")
-        hp -= 10
-        attack += 2
-        print(f" ❤ Здоровье: {hp} (-10) | ⚔ Атака: {attack} (+2)")
+    def _proccess_choice(self, choice):
+        if choice == "1":
+            print(f"\n{GREEN}🍂 В лесу на тебя выскакивает волк! Ты отбиваешься.{RESET}")
+            self.hero.take_damage(10)
+            self.hero.attack += 2
+            print(f" ❤ Здоровье: {self.hero.hp} (-10) | ⚔ Атака: {self.hero.attack} (+2)")
+            self.hero.add_item("🐺 Волчий зуб")
 
-        if "🐺 Волчий зуб" not in inventory:
-            inventory.append("🐺 Волчий зуб")
-            print(" 🎒 В рюкзак упал: Волчий зуб!")
+        elif choice == "2":
+            print(f"{CYAN}🏠 В деревне лекарь даёт тебе зелье.{RESET}")
+            self.hero.add_item("🧪 Зелье здоровья")
 
-    elif choice == "2":
-        print(f"{CYAN}🏠 В деревне лекарь даёт тебе зелье.{RESET}")
-        if "🧪 Зелье здоровья" not in inventory:
-            inventory.append("🧪 Зелье здоровья")
-            print(" 🎒 Получено: Зелье здоровья")
-    
-    elif choice == "3":
-        print(f"\n{YELLOW}💤 Ты разводишь костёр и восстанавливаешь силы...")
-        hp = min(100, hp + 20)
-        print(f" ❤ Здоровье восстановлено до {hp}!")
+        elif choice == "3":
+            print(f"\n{YELLOW}💤 Ты разводишь костёр и восстанавливаешь силы...")
+            self.hero.heal(20)
+            print(f" ❤ Здоровье восстановлено до {self.hero.hp}!")
 
-    elif choice == "4":
-        print(f"\n{RED}🌙 До встречи, герой! История сохраниться в памяти...{RESET}")
-        return hp, attack, inventory, False
+        elif choice == "4":
+            print(f"\n{RED}🌙 До встречи, герой! История сохраниться в памяти...{RESET}")
+            self.is_running = False
 
-    # Проверка на конец игры
-    if hp <= 0:
-        print(f"\n{RED}💀 Твоё здоровье иссякло. Ты падаешь  без сил...{RESET}")
-        print(" Игра окончена. Спасибо за приключение!")
-        return hp, attack, inventory, False
+        if self.hero.hp <= 0:
+            print(f"\n{RED}💀 Твоё здоровье иссякло. Ты падаешь  без сил...{RESET}")
+            print(" Игра окончена. Спасибо за приключение!")
+            self.is_running = False
 
-    return hp, attack, inventory, True
+        if not self.is_running:
+            self._save_game()
 
-def save_game(player_name, hp, attack, inventory):
-    """Сохраняет прогресс в файл JSON"""
-    data = {
-        "player_name": player_name,
-        "hp": hp,
-        "attack": attack,
-        "inventory": inventory
-    }
-    with open(SAVE_FILE, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=4, ensure_ascii=False)
-    print(f"💾 Прогресс сохранён  в {SAVE_FILE}")
-
-def load_game():
-    """Загружает прогресс из файла, если он существует"""
-    if not os.path.exists(SAVE_FILE):
-        return None
-    try:
-        with open(SAVE_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except (json.JSONDecodeError, IOError):
-        return None
-
-def main():
-    print_header()
-    saved_data = load_game()
-
-    if saved_data:
-        print(f"{GREEN}📜 Найдено сохранение: {saved_data['player_name']}(❤ {saved_data['hp']}){RESET}")
-        start_choice = input(f"Загрузить прошлую историю? (1 - Да, 2 - Начать заново): {RESET}").strip()
-
-        if start_choice == "1":
-            player_name  = saved_data["player_name"]
-            hp = saved_data["hp"]
-            attack = saved_data["attack"]
-            inventory = saved_data["inventory"]
-            print(f"\n{CYAN}✨ Добро пожаловать обратно, {player_name}!{RESET}")
-        else:
-            player_name = input(f"{GREEN}Как тебя зовут, герой?{RESET}").strip()
-            hp, attack, inventory = 100, 5, ["🗺 Карта мира", "🍞 Хлеб"]
-    else:
-        player_name = input(f"{GREEN}Как тебя зовут, герой?{RESET}").strip()
-        hp, attack, inventory = 100, 5, ["🗺 Карта мира", "🍞 Хлеб"]
-
-    print(f"\n{YELLOW}Привет, {player_name}! Твоя история начинается.{RESET}")
-    playing = True
-
-    while playing:
-        show_stats(hp, attack, inventory)
-        show_menu()
-        choice = get_choice()
-        hp, attack, inventory, playing = proccess_choice(choice, hp, attack, inventory)
-    
-    save_game(player_name, hp, attack, inventory)
+    def _save_game(self):
+        data = {
+            "name": self.hero.name,
+            "hp": self.hero.hp,
+            "attack": self.hero.attack,
+            "inventory": self.hero.inventory
+        }
+        with open(self.save_file, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=4, ensure_ascii=False)
+        print(f"💾 Прогресс сохранён  в {self.save_file}")
 
 if __name__ == "__main__":
-    main()
+    game = GameEngine()
+    game.start()
